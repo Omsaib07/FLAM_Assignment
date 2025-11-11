@@ -137,7 +137,65 @@ canvasEl.addEventListener('mouseenter', (e) => {
   customCursor.style.height = `${currentWidth}px`;
   customCursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
 });
+// --- Touch Event Listeners ---
 
+// Helper function to get the touch position
+function getTouchPos(e) {
+  if (e.touches && e.touches.length > 0) {
+    return { 
+      clientX: e.touches[0].clientX, 
+      clientY: e.touches[0].clientY 
+    };
+  }
+  return null;
+}
+
+canvasEl.addEventListener('touchstart', (e) => {
+  // Stop the page from scrolling
+  e.preventDefault(); 
+  const pos = getTouchPos(e);
+  if (!pos) return;
+
+  const point = canvasApp.getCanvasCoordinates(pos.clientX, pos.clientY);
+  const strokeData = { ...appState, point };
+  
+  canvasApp.startDrawing(strokeData); // Local drawing
+  wsClient.startStroke(strokeData);   // Send to server
+}, { passive: false }); // Need passive:false to allow preventDefault
+
+canvasEl.addEventListener('touchmove', (e) => {
+  // Stop the page from scrolling
+  e.preventDefault();
+  const pos = getTouchPos(e);
+  if (!pos) return;
+
+  // Move our custom cursor
+  customCursor.style.transform = `translate(${pos.clientX}px, ${pos.clientY}px)`;
+  
+  const point = canvasApp.getCanvasCoordinates(pos.clientX, pos.clientY);
+
+  if (canvasApp.isDrawing) {
+    canvasApp.draw(point);    // Local drawing
+    wsClient.drawStroke(point); // Send to server
+  }
+  
+  // Send *other* users our cursor position
+  wsClient.moveCursor(point);
+}, { passive: false }); // Need passive:false to allow preventDefault
+
+canvasEl.addEventListener('touchend', (e) => {
+  if (canvasApp.isDrawing) {
+    canvasApp.stopDrawing();    // Local
+    wsClient.endStroke();       // Send to server
+  }
+});
+
+canvasEl.addEventListener('touchcancel', (e) => {
+  if (canvasApp.isDrawing) {
+    canvasApp.stopDrawing();    // Local
+    wsClient.endStroke();       // Send to server
+  }
+});
 // --- 6. Undo/Redo Event Listeners ---
 undoBtn.addEventListener('click', () => wsClient.requestUndo());
 redoBtn.addEventListener('click', () => wsClient.requestRedo());
