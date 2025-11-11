@@ -29,17 +29,13 @@ function getRoomState(roomName) {
   return rooms[roomName];
 }
 
-// --- DELETED ---
-// The global state variables are no longer needed.
-// let activeUsers = {}; 
-// let activeStrokes = {}; 
-
 // --- 4. Express Server Setup ---
 // Use the more robust 'process.cwd()' for deployment
 const clientPath = path.join(process.cwd(), 'client'); 
 app.use(express.static(clientPath)); 
 
-app.get('/*', (req, res) => { // Use /* to catch all routes
+// Use /* to catch all routes (for the room system)
+app.get('/*', (req, res) => { 
   // Send the 'index.html' file, which will handle its own room logic
   res.sendFile(path.join(clientPath, 'index.html')); 
 });
@@ -58,7 +54,7 @@ io.on('connection', (socket) => {
     // 2. Get the state for this specific room
     const roomState = getRoomState(roomName);
 
-    // --- 3. New User Setup (MOVED & MODIFIED) ---
+    // --- 3. New User Setup (Room-Specific) ---
     const userColor = `hsl(${Math.random() * 360}, 100%, 70%)`; 
     // Add user to the ROOM's state
     roomState.activeUsers[socket.id] = { id: socket.id, color: userColor }; 
@@ -72,7 +68,7 @@ io.on('connection', (socket) => {
     // 3. Send updated user list to *all other* clients in THIS ROOM
     socket.broadcast.to(roomName).emit('user-list-update', Object.values(roomState.activeUsers)); 
 
-    // --- 6. Drawing Event Listeners (MOVED & MODIFIED) ---
+    // --- 6. Drawing Event Listeners (Room-Specific) ---
     
     socket.on('start-stroke', (data) => {
       // Use the ROOM'S state
@@ -107,7 +103,7 @@ io.on('connection', (socket) => {
       }
     });
 
-    // --- 7. State Management Event Listeners (MOVED & MODIFIED) ---
+    // --- 7. State Management Event Listeners (Room-Specific) ---
 
     socket.on('request-undo', () => {
       // Use THIS ROOM'S state
@@ -131,7 +127,7 @@ io.on('connection', (socket) => {
       }
     });
 
-    // --- 8. Cursor Event Listener (MOVED & MODIFIED) ---
+    // --- 8. Cursor Event Listener (Room-Specific) ---
     socket.on('cursor-move', (data) => {
       // Broadcast to *all others* in THIS ROOM
       socket.broadcast.to(roomName).emit('cursor-moved', { 
@@ -140,7 +136,7 @@ io.on('connection', (socket) => {
       });
     });
 
-    // --- 9. Disconnect Event Listener (MOVED & MODIFIED) ---
+    // --- 9. Disconnect Event Listener (Room-Specific) ---
     socket.on('disconnect', () => {
       console.log(`User ${socket.id} disconnected from room ${roomName}`);
       

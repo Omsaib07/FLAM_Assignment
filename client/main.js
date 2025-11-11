@@ -15,6 +15,8 @@ const appState = {
 
 // A local cache of the canvas history for instant redraws (e.g., on resize)
 let localOperationHistory = [];
+// This locks the drawing input to 'mouse' or 'touch' to prevent conflicts.
+let drawingInput = null;
 
 // --- 2. DOM Element Selection ---
 const canvasEl = document.getElementById('drawing-canvas');
@@ -79,6 +81,9 @@ redoBtn.addEventListener('click', () => wsClient.requestRedo());
 // --- 5. Mouse Event Listeners ---
 
 canvasEl.addEventListener('mousedown', (e) => {
+  if (drawingInput) return; // Exit if already drawing (e.g., with touch)
+  drawingInput = 'mouse';     // Lock input to mouse
+  
   const point = canvasApp.getCanvasCoordinates(e.clientX, e.clientY); 
   const strokeData = { ...appState, point }; 
   
@@ -91,7 +96,8 @@ canvasEl.addEventListener('mousemove', (e) => {
   
   const point = canvasApp.getCanvasCoordinates(e.clientX, e.clientY);
 
-  if (canvasApp.isDrawing) {
+  // Only draw if the 'mouse' is the locked input
+  if (canvasApp.isDrawing && drawingInput === 'mouse') {
     canvasApp.draw(point);
     wsClient.drawStroke(point);
   }
@@ -100,14 +106,18 @@ canvasEl.addEventListener('mousemove', (e) => {
 });
 
 canvasEl.addEventListener('mouseup', () => {
-  if (canvasApp.isDrawing) {
+  // Only stop drawing if 'mouse' was the locked input
+  if (canvasApp.isDrawing && drawingInput === 'mouse') {
+    drawingInput = null; // Release the lock
     canvasApp.stopDrawing();
     wsClient.endStroke();
   }
 });
 
 canvasEl.addEventListener('mouseout', () => {
-  if (canvasApp.isDrawing) {
+  // Only stop drawing if 'mouse' was the locked input
+  if (canvasApp.isDrawing && drawingInput === 'mouse') {
+    drawingInput = null; // Release the lock
     canvasApp.stopDrawing(); 
     wsClient.endStroke(); 
   }
@@ -138,8 +148,12 @@ function getTouchPos(e) {
 
 canvasEl.addEventListener('touchstart', (e) => {
   e.preventDefault(); 
+  if (drawingInput) return; // Exit if already drawing (e.g., with mouse)
+
   const pos = getTouchPos(e);
   if (!pos) return;
+
+  drawingInput = 'touch'; // Lock input to touch
 
   const point = canvasApp.getCanvasCoordinates(pos.clientX, pos.clientY);
   const strokeData = { ...appState, point };
@@ -157,7 +171,8 @@ canvasEl.addEventListener('touchmove', (e) => {
   
   const point = canvasApp.getCanvasCoordinates(pos.clientX, pos.clientY);
 
-  if (canvasApp.isDrawing) {
+  // Only draw if 'touch' is the locked input
+  if (canvasApp.isDrawing && drawingInput === 'touch') {
     canvasApp.draw(point);
     wsClient.drawStroke(point);
   }
@@ -166,14 +181,18 @@ canvasEl.addEventListener('touchmove', (e) => {
 }, { passive: false }); // Need passive:false to allow preventDefault
 
 canvasEl.addEventListener('touchend', (e) => {
-  if (canvasApp.isDrawing) {
+  // Only stop drawing if 'touch' was the locked input
+  if (canvasApp.isDrawing && drawingInput === 'touch') {
+    drawingInput = null; // Release the lock
     canvasApp.stopDrawing();
     wsClient.endStroke();
   }
 });
 
 canvasEl.addEventListener('touchcancel', (e) => {
-  if (canvasApp.isDrawing) {
+  // Only stop drawing if 'touch' was the locked input
+  if (canvasApp.isDrawing && drawingInput === 'touch') {
+    drawingInput = null; // Release the lock
     canvasApp.stopDrawing();
     wsClient.endStroke();
   }
