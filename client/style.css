@@ -2,18 +2,20 @@
 
 /* --- 1. Global Styles --- */
 :root {
+  /* Define CSS variables (like constants) for easy theme changes */
   --toolbar-height: 60px;
   --primary-bg: #f5f5f7;
   --canvas-bg: #ffffff;
   --ui-bg: #ffffff;
   --border-color: #d0d0d0;
   --text-color: #1d1d1f;
-  --primary-accent: #007aff;
+  --primary-accent: #007aff; /* Apple blue */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 body {
+  /* Use the native system font stack for a modern feel */
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   margin: 0;
@@ -23,6 +25,7 @@ body {
   color: var(--text-color);
 }
 
+/* A common reset to make layout easier */
 * {
   box-sizing: border-box;
 }
@@ -31,36 +34,35 @@ body {
 #drawing-canvas {
   display: block;
   background-color: var(--canvas-bg);
-  /* This hides the real system cursor */
+  /* Hide the real system cursor, so we can use our custom one */
   cursor: none; 
   position: absolute;
   top: 0;
   left: 0;
-  /* Make sure it's behind the floating UI */
-  z-index: 1;
+  /* Make sure the canvas is *behind* the floating UI */
+  z-index: 1; 
 }
 
 /* --- 3. Toolbar --- */
 .toolbar {
-  position: fixed;
+  position: fixed; /* Float over the canvas */
   top: 15px;
-  left: 15px;
-  transform: none; 
-  width: auto; 
-  flex-wrap: wrap; 
-  height: auto; 
+  left: 15px; /* Pin to the top-left */
+  transform: none; /* No centering */
+  width: auto; /* Be as wide as its content */
+  flex-wrap: wrap; /* Allow items to stack on small screens */
+  height: auto; /* Allow height to grow if items wrap */
   min-height: var(--toolbar-height);
-  padding: 10px 15px; 
+  padding: 10px 15px;
 
-  /* ADD THIS LINE: */
-  /* This tells the toolbar: "be as wide as you want,
-     BUT don't be wider than the screen minus ~230px
-     (which is the space for the user list + margins)"
-     This will force it to wrap instead of overlapping.
+  /* This is the responsive fix: 
+    Don't grow wider than the screen width minus the space
+    we've reserved for the user list (180px + 15px margin + 35px extra).
+    This forces the toolbar to wrap *before* it overlaps.
   */
   max-width: calc(100% - 230px);
   
-  /* ... rest of your toolbar styles ... */
+  /* Styling */
   background-color: var(--ui-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -68,17 +70,20 @@ body {
   display: flex;
   align-items: center;
   gap: 15px;
-  z-index: 1000;
+  z-index: 1000; /* Sit on top of the canvas */
 }
+
+/* A group of related tools (e.g., Color, Width) */
 .tool-group {
   display: flex;
   align-items: center;
   gap: 10px;
-  /* Add separators */
   padding-right: 15px;
-  border-right: 1px solid var(--border-color);
+  /* A small line separating tool groups */
+  border-right: 1px solid var(--border-color); 
 }
 
+/* Don't add a separator after the last group */
 .tool-group:last-child {
   border-right: none;
   padding-right: 0;
@@ -87,12 +92,12 @@ body {
 .tool-group label {
   font-size: 14px;
   font-weight: 500;
-  white-space: nowrap;
+  white-space: nowrap; /* Prevent labels from wrapping */
 }
 
 /* --- 4. Tool Styling (Buttons, Inputs) --- */
 
-/* Basic Button */
+/* Basic Button style */
 .tool-group button {
   padding: 8px 12px;
   font-size: 14px;
@@ -109,7 +114,7 @@ body {
   border-color: #ccc;
 }
 
-/* Active Tool Button */
+/* Style for the *active* button (Brush or Eraser) */
 .tool-group button.active {
   background-color: var(--primary-accent);
   color: white;
@@ -117,8 +122,9 @@ body {
   box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2);
 }
 
-/* Color Picker */
+/* --- Style the Color Picker --- */
 #color {
+  /* Remove all default browser styles */
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -129,21 +135,24 @@ body {
   cursor: pointer;
   padding: 0;
 }
+/* Style the outer wrapper (for Chrome/Safari) */
 #color::-webkit-color-swatch-wrapper {
   padding: 0;
   border-radius: 50%;
 }
+/* Style the inner color circle */
 #color::-webkit-color-swatch {
   border: 2px solid #ddd;
   border-radius: 50%;
   transition: transform 0.2s ease;
 }
 #color:hover::-webkit-color-swatch {
-  transform: scale(1.1);
+  transform: scale(1.1); /* Nice little hover effect */
 }
 
-/* Width Slider */
+/* --- Style the Width Slider --- */
 #width {
+  /* Reset default styles */
   -webkit-appearance: none;
   appearance: none;
   width: 120px;
@@ -152,7 +161,7 @@ body {
   outline: none;
   border-radius: 3px;
 }
-
+/* Style the slider "thumb" (the circle) */
 #width::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -165,6 +174,7 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
+/* The '5' next to the slider */
 #width-value {
   font-size: 14px;
   font-weight: 500;
@@ -174,15 +184,15 @@ body {
 
 /* --- 5. User List --- */
 #user-list {
-  position: fixed;
+  position: fixed; /* Float over the canvas */
   top: 15px;
-  right: 15px;
+  right: 15px; /* Pin to the top-right */
   width: 180px;
   background: var(--ui-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 10px;
-  z-index: 1000;
+  z-index: 1000; /* Sit on top of the canvas */
   box-shadow: var(--shadow-md);
 }
 
@@ -198,7 +208,7 @@ body {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 200px;
+  max-height: 200px; /* Allow scrolling if many users */
   overflow-y: auto;
 }
 
@@ -209,39 +219,47 @@ body {
   margin-bottom: 8px;
 }
 
+/* The little color circle next to a user's name */
 .user-color-swatch {
   width: 14px;
   height: 14px;
   border-radius: 50%;
   margin-right: 8px;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;
+  flex-shrink: 0; /* Prevent from shrinking */
 }
 
 /* --- 6. Other Users' Cursors --- */
 #cursor-overlay {
+  /* This is a full-screen, transparent layer
+     that holds all the *other* users' cursor icons. */
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100vh;
-  pointer-events: none; /* Let clicks go through to canvas */
-  z-index: 999;
+  /* Clicks "pass through" this layer to the canvas below */
+  pointer-events: none; 
+  z-index: 999; /* Sit *just* below our own cursor/UI */
 }
 
 .user-cursor {
-  position: absolute;
+  position: absolute; /* Allows positioning via 'transform' */
   width: 24px;
   height: 24px;
+  /* A simple SVG (arrow) for the cursor */
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 19l7-7 3 3-7 7-3-3z'%3E%3C/path%3E%3Cpath d='M13 13l6 6'%3E%3C/path%3E%3Cpath d='M14 4l-9 9 3 3 9-9-3-3z'%3E%3C/path%3E%3Cpath d='M5 15l-3 3 1 1 3-3'%3E%3C/path%3E%3C/svg%3E");
   background-size: contain;
-  transform: translate(0, 0); /* Point of the cursor is top-left */
-  transition: transform 0.05s linear;
+  /* 'transform' is more performant for movement than 'top'/'left' */
+  transform: translate(0, 0); 
+  /* Smooths out jerky cursor movement */
+  transition: transform 0.05s linear; 
 }
 
+/* The colored name-tag on another user's cursor */
 .user-cursor-label {
   position: absolute;
-  top: 22px;
+  top: 22px; /* Positioned below the cursor icon */
   left: 10px;
   font-size: 12px;
   padding: 3px 6px;
@@ -252,30 +270,30 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-/* --- 7. Custom Drawing Cursor --- */
+/* --- 7. Custom Drawing Cursor (Our *own* "fake" cursor) --- */
 #custom-cursor {
-  position: absolute;
-  width: 5px; /* Initial size, will be changed by JS */
-  height: 5px; /* Initial size, will be changed by JS */
+  position: absolute; /* Follows the mouse */
+  width: 5px;  /* Default size, changed by JS */
+  height: 5px; /* Default size, changed by JS */
   
   /* This is the brush style: a black circle */
   border: 2px solid #000; 
   border-radius: 50%;
   
-  /* This centers the circle on the pointer */
+  /* Center the circle on the mouse pointer (x, y) */
   transform: translate(-50%, -50%); 
   
-  /* CRITICAL: Lets mouse clicks "pass through" to the canvas below */
+  /* CRITICAL: Clicks must "pass through" this div to the canvas */
   pointer-events: none; 
   
-  /* Make sure it's on top of other users' cursors */
+  /* Must be on top of everything else */
   z-index: 1001; 
   
-  /* Hide it by default, JS will show it */
+  /* Hidden by default; JS shows it on 'mouseenter' */
   display: none; 
 }
 
-/* This is the eraser style: a red, empty circle */
+/* This class is added by JS when the eraser is active */
 #custom-cursor.eraser {
   border: 2px solid #ff0000;
   background-color: rgba(255, 255, 255, 0.5); /* Semi-transparent white */

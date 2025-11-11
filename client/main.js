@@ -1,15 +1,20 @@
 // client/main.js
-import { CanvasApp } from './canvas.js';
-import { WebSocketClient } from './websocket.js';
 
-// --- Global App State ---
+// Import the 'CanvasApp' class from its file. This class manages all <canvas> drawing.
+import { CanvasApp } from './canvas.js'; 
+// Import the 'WebSocketClient' class. This class manages all server communication.
+import { WebSocketClient } from './websocket.js'; 
+
+// --- 1. Global Client-Side State ---
+// This object holds the user's current tool settings.
 const appState = {
   color: '#000000',
   width: 5,
   mode: 'source-over' // 'source-over' = brush, 'destination-out' = eraser
 };
 
-// --- DOM Elements ---
+// --- 2. DOM Element Selection ---
+// Grab all the HTML elements we need to interact with.
 const canvasEl = document.getElementById('drawing-canvas');
 const colorInput = document.getElementById('color');
 const widthInput = document.getElementById('width');
@@ -20,119 +25,142 @@ const undoBtn = document.getElementById('undo');
 const redoBtn = document.getElementById('redo');
 const userListEl = document.getElementById('users');
 const cursorOverlay = document.getElementById('cursor-overlay');
-const customCursor = document.getElementById('custom-cursor'); // Our custom cursor
+const customCursor = document.getElementById('custom-cursor'); // Our "fake" cursor div
 
-// --- Initialization ---
-const canvasApp = new CanvasApp(canvasEl);
-const wsClient = new WebSocketClient(window.location.origin); // Connect to the server that served the page
+// --- 3. Initialization ---
+// Create a new instance of our CanvasApp, passing it the <canvas> element.
+const canvasApp = new CanvasApp(canvasEl); 
+// Create a new instance of our WebSocketClient.
+// 'window.location.origin' dynamically connects to the server that sent the page
+// (e.g., 'http://localhost:3000' or 'https://drawing-app.onrender.com')
+const wsClient = new WebSocketClient(window.location.origin); 
 
-// Set initial tool as active
+// Set the brush as the default active tool on load.
 brushBtn.classList.add('active');
 
-// --- Event Listeners ---
+// --- 4. Toolbar Event Listeners ---
 
-// Tool Selection
+// When the color picker changes, update our appState.
 colorInput.addEventListener('input', (e) => {
   appState.color = e.target.value;
 });
 
+// When the width slider changes...
 widthInput.addEventListener('input', (e) => {
-  appState.width = e.target.value;
-  widthValue.textContent = e.target.value;
+  // Update the appState.
+  appState.width = e.target.value; 
+  // Update the number label next to the slider.
+  widthValue.textContent = e.target.value; 
   
-  // Update our custom cursor size
+  // Also update the size of our custom "fake" cursor.
   customCursor.style.width = `${e.target.value}px`;
   customCursor.style.height = `${e.target.value}px`;
 });
 
+// When the brush button is clicked...
 brushBtn.addEventListener('click', () => {
-  appState.mode = 'source-over';
-  brushBtn.classList.add('active');
-  eraserBtn.classList.remove('active');
+  appState.mode = 'source-over'; // Set mode to "draw"
+  brushBtn.classList.add('active'); // Highlight brush button
+  eraserBtn.classList.remove('active'); // Un-highlight eraser
   
-  // Change cursor to brush style
-  customCursor.classList.remove('eraser');
+  // Change the custom cursor's style to the brush (a simple circle).
+  customCursor.classList.remove('eraser'); 
 });
 
+// When the eraser button is clicked...
 eraserBtn.addEventListener('click', () => {
-  appState.mode = 'destination-out';
-  eraserBtn.classList.add('active');
-  brushBtn.classList.remove('active');
+  appState.mode = 'destination-out'; // Set mode to "erase"
+  eraserBtn.classList.add('active'); // Highlight eraser button
+  brushBtn.classList.remove('active'); // Un-highlight brush
   
-  // Change cursor to eraser style
-  customCursor.classList.add('eraser');
+  // Change the custom cursor's style to the eraser.
+  customCursor.classList.add('eraser'); 
 });
 
-// Canvas Drawing Events
+// --- 5. Canvas Drawing Event Listeners ---
+
+// When the mouse is pressed down on the canvas...
 canvasEl.addEventListener('mousedown', (e) => {
-  const point = canvasApp.getCanvasCoordinates(e.clientX, e.clientY);
-  const strokeData = { ...appState, point };
+  // Get the x, y coordinates relative to the canvas.
+  const point = canvasApp.getCanvasCoordinates(e.clientX, e.clientY); 
+  // Package up all current tool settings with the starting point.
+  const strokeData = { ...appState, point }; 
   
-  canvasApp.startDrawing(strokeData); // Local drawing
-  wsClient.startStroke(strokeData);   // Send to server
+  canvasApp.startDrawing(strokeData); // Start drawing on our *local* canvas immediately.
+  wsClient.startStroke(strokeData);   // Send the 'start-stroke' message to the server.
 });
 
+// When the mouse moves over the canvas...
 canvasEl.addEventListener('mousemove', (e) => {
-  // Move our custom cursor
-  customCursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+  // Move our custom "fake" cursor to match the real mouse position.
+  customCursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`; 
   
   const point = canvasApp.getCanvasCoordinates(e.clientX, e.clientY);
 
+  // If we are in "drawing" mode (mouse is down)...
   if (canvasApp.isDrawing) {
-    canvasApp.draw(point);    // Local drawing
-    wsClient.drawStroke(point); // Send to server
+    canvasApp.draw(point);    // Draw the next segment on our *local* canvas.
+    wsClient.drawStroke(point); // Send the new point to the server.
   }
   
-  // Send *other* users our cursor position
-  wsClient.moveCursor(point);
+  // Always send our cursor position to the server for others to see.
+  wsClient.moveCursor(point); 
 });
 
+// When the mouse is released...
 canvasEl.addEventListener('mouseup', () => {
   if (canvasApp.isDrawing) {
-    canvasApp.stopDrawing();    // Local
-    wsClient.endStroke();       // Send to server
+    canvasApp.stopDrawing();    // Stop drawing locally.
+    wsClient.endStroke();       // Tell the server the stroke is finished.
   }
 });
 
+// When the mouse leaves the canvas area...
 canvasEl.addEventListener('mouseout', () => {
   if (canvasApp.isDrawing) {
-    canvasApp.stopDrawing();    // Local
-    wsClient.endStroke();       // Send to server
+    // If we were drawing and left, stop the stroke.
+    canvasApp.stopDrawing(); 
+    wsClient.endStroke(); 
   }
-  // Hide custom cursor when leaving canvas
-  customCursor.style.display = 'none';
+  // Hide the custom cursor so it doesn't get "stuck" at the edge.
+  customCursor.style.display = 'none'; 
 });
 
+// When the mouse re-enters the canvas area...
 canvasEl.addEventListener('mouseenter', (e) => {
-  // Show custom cursor when entering canvas
-  customCursor.style.display = 'block';
+  // Show the custom cursor.
+  customCursor.style.display = 'block'; 
   
-  // Set initial size and position
+  // Set its size and position immediately, don't wait for a mousemove.
   const currentWidth = widthInput.value;
   customCursor.style.width = `${currentWidth}px`;
   customCursor.style.height = `${currentWidth}px`;
   customCursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
 });
 
-
-// Undo/Redo
+// --- 6. Undo/Redo Event Listeners ---
 undoBtn.addEventListener('click', () => wsClient.requestUndo());
 redoBtn.addEventListener('click', () => wsClient.requestRedo());
 
+// --- 7. WebSocket Event Handlers (Receiving from Server) ---
 
-// --- WebSocket Event Handlers ---
+// When we successfully connect to the server.
 wsClient.onConnect(() => {
   console.log('Connected to server!');
 });
 
+// When the server sends us the *initial* canvas state (on first connect).
 wsClient.onInitialState((history) => {
   console.log('Received initial canvas state');
-  canvasApp.redrawFromHistory(history);
+  // Redraw the entire canvas from the master history.
+  canvasApp.redrawFromHistory(history); 
 });
 
+// When the server sends an updated list of users.
 wsClient.onUserListUpdate((users) => {
   console.log('User list updated', users);
-  userListEl.innerHTML = ''; // Clear list
+  userListEl.innerHTML = ''; // Clear the old list
+  // Re-create the list from scratch
   users.forEach(user => {
     const li = document.createElement('li');
     li.innerHTML = `
@@ -143,25 +171,34 @@ wsClient.onUserListUpdate((users) => {
   });
 });
 
+// When *another* user starts a stroke.
 wsClient.onStrokeStarted((data) => {
-  canvasApp.startRemoteDrawing(data.user, data);
+  // Begin drawing their stroke on our canvas.
+  canvasApp.startRemoteDrawing(data.user, data); 
 });
 
+// When *another* user is drawing a stroke.
 wsClient.onStrokeDrawn((data) => {
-  canvasApp.drawRemote(data.user, data.point);
+  // Continue drawing their stroke segment.
+  canvasApp.drawRemote(data.user, data.point); 
 });
 
+// When *anyone* (including us) triggers an Undo or Redo.
 wsClient.onGlobalRedraw((history) => {
   console.log('Received global redraw command');
-  canvasApp.redrawFromHistory(history);
-  // Re-set canvas settings as redraw clears them
-  canvasApp.ctx.globalCompositeOperation = appState.mode;
+  // The server has sent a new "truth". Clear and redraw everything.
+  canvasApp.redrawFromHistory(history); 
+  // Re-set our local tool, as redrawFromHistory may have reset it.
+  canvasApp.ctx.globalCompositeOperation = appState.mode; 
 });
 
+// When *another* user moves their cursor.
 wsClient.onCursorMoved((data) => {
-  let cursorEl = document.getElementById(`cursor-${data.id}`);
+  // Find the cursor element for that user.
+  let cursorEl = document.getElementById(`cursor-${data.id}`); 
   if (!cursorEl) {
-    const user = wsClient.users[data.id];
+    // If it doesn't exist, create it.
+    const user = wsClient.users[data.id]; // Get user data (like color) from our cache
     cursorEl = document.createElement('div');
     cursorEl.id = `cursor-${data.id}`;
     cursorEl.className = 'user-cursor';
@@ -175,36 +212,33 @@ wsClient.onCursorMoved((data) => {
     cursorOverlay.appendChild(cursorEl);
   }
   
-  // Position the cursor relative to the window, not the canvas
-  cursorEl.style.transform = `translate(${data.x}px, ${data.y}px)`;
+  // Move the cursor element to its new position.
+  cursorEl.style.transform = `translate(${data.x}px, ${data.y}px)`; 
 });
 
+// When the server tells us a user has disconnected.
 wsClient.onUserDisconnected((id) => {
-  const cursorEl = document.getElementById(`cursor-${id}`);
+  // Find that user's cursor element.
+  const cursorEl = document.getElementById(`cursor-${id}`); 
   if (cursorEl) {
-    cursorEl.remove();
+    // Remove it from the screen.
+    cursorEl.remove(); 
   }
 });
 
-// Handle window resizing
+// --- 8. Window Resize Handler ---
 window.addEventListener('resize', () => {
-  canvasApp.resizeCanvas();
-  // On resize, the canvas is cleared, so we must redraw from history
-  wsClient.socket.emit('request-history-redraw'); // We need to ask for a redraw
-  // A simpler way (if the server doesn't have this event):
-  // You would need to store the history locally and call
-  // canvasApp.redrawFromHistory(localHistory);
+  canvasApp.resizeCanvas(); // Resize the canvas element
+  // Resizing clears the canvas, so we must redraw.
+  // This asks the server for the history again.
+  // A better way is to cache history locally (as done in later fixes).
+  wsClient.socket.emit('request-history-redraw'); 
 });
 
-// Add a handler for the server to force a redraw (like on resize)
+// This handler would be for the server's response to 'request-history-redraw'
 wsClient.socket.on('force-redraw', (history) => {
     canvasApp.redrawFromHistory(history);
 });
 
-// Add this to server.js in the connection block:
-// socket.on('request-history-redraw', () => {
-//   socket.emit('force-redraw', operationHistory);
-// });
-// For now, we'll just redraw from a blank slate.
-// The next global undo will fix it.
-canvasApp.resizeCanvas(); // Initial size
+// Perform an initial resize to set the canvas to full screen.
+canvasApp.resizeCanvas();
