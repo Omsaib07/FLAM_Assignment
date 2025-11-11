@@ -44,23 +44,32 @@ body {
 .toolbar {
   position: fixed;
   top: 15px;
-  /* Center the toolbar */
-  left: 50%;
-  transform: translateX(-50%);
+  left: 15px;
+  transform: none; 
+  width: auto; 
+  flex-wrap: wrap; 
+  height: auto; 
+  min-height: var(--toolbar-height);
+  padding: 10px 15px; 
 
-  height: var(--toolbar-height);
+  /* ADD THIS LINE: */
+  /* This tells the toolbar: "be as wide as you want,
+     BUT don't be wider than the screen minus ~230px
+     (which is the space for the user list + margins)"
+     This will force it to wrap instead of overlapping.
+  */
+  max-width: calc(100% - 230px);
+  
+  /* ... rest of your toolbar styles ... */
   background-color: var(--ui-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
   box-shadow: var(--shadow-md);
-
   display: flex;
   align-items: center;
-  padding: 0 20px;
   gap: 15px;
   z-index: 1000;
 }
-
 .tool-group {
   display: flex;
   align-items: center;
