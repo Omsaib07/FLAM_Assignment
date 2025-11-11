@@ -1,0 +1,137 @@
+/* client/style.css */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+  overflow: hidden; /* Prevent scrolling */
+}
+
+/* --- Canvas --- */
+#drawing-canvas {
+  display: block;
+  background-color: #ffffff;
+  border: 1px solid #ccc;
+  cursor: crosshair;
+  /* Position it relative to the body */
+  position: absolute;
+  top: 50px; /* Below toolbar */
+  left: 0;
+}
+
+/* --- Toolbar --- */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50px;
+  background-color: #fff;
+  border-bottom: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  box-sizing: border-box;
+  z-index: 1000;
+}
+
+.tool-group {
+  display: flex;
+  align-items: center;
+  margin-right: 20px;
+}
+
+.tool-group label {
+  margin-right: 5px;
+  font-size: 14px;
+}
+
+.tool-group button {
+  padding: 5px 10px;
+  margin-left: 5px;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.tool-group button.active {
+  background-color: #e0e0e0;
+  border-color: #bbb;
+}
+
+/* --- User List --- */
+#user-list {
+  position: fixed;
+  top: 60px;
+  right: 10px;
+  width: 150px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 10px;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+#user-list h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+#user-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#user-list li {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.user-color-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  border: 1px solid #fff;
+  box-shadow: 0 0 2px rgba(0,0,0,0.5);
+}
+
+/* --- Cursor Overlay --- */
+#cursor-overlay {
+  position: absolute;
+  top: 50px; /* Match canvas position */
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 50px);
+  pointer-events: none; /* Let clicks go through to canvas */
+  z-index: 999;
+}
+
+.user-cursor {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  /* Simple cursor shape */
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5l10 -10"></path></svg>');
+  background-size: contain;
+  transform: translate(-5px, -5px); /* Offset to point */
+  transition: transform 0.05s linear;
+}
+
+.user-cursor-label {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  color: white;
+  white-space: nowrap;
+}
