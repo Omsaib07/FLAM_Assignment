@@ -24,7 +24,7 @@ const customCursor = document.getElementById('custom-cursor'); // Our custom cur
 
 // --- Initialization ---
 const canvasApp = new CanvasApp(canvasEl);
-const wsClient = new WebSocketClient('ws://localhost:3000'); // Use ws://, Socket.io handles upgrade
+const wsClient = new WebSocketClient(window.location.origin); // Connect to the server that served the page
 
 // Set initial tool as active
 brushBtn.classList.add('active');
