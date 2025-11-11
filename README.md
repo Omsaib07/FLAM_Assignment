@@ -1,6 +1,6 @@
 # Real-Time Collaborative Canvas
 
-A multi-user drawing application built with Node.js, Express, Socket.io, and Vanilla JavaScript (HTML5 Canvas).
+A multi-user, room-based drawing application built with Node.js, Socket.io, and Vanilla JavaScript (HTML5 Canvas).
 
 ## 🚀 Live Demo
 
@@ -8,23 +8,50 @@ A multi-user drawing application built with Node.js, Express, Socket.io, and Van
 
 [**https://drawing-app-vr4u.onrender.com**](https://drawing-app-vr4u.onrender.com)
 
-*(Note: The server is on Render's free tier, so it may take up to 30 seconds to spin up if it hasn't been used in a while.)*
+To use the room feature, simply add a room name to the URL. For example:
+
+* `.../room1`
+* `.../a-cool-drawing-space`
+
+*(Note: The server is on Render's free tier, so it may take 30-60 seconds to "wake up" if it's been idle.)*
 
 ---
 
-## 🧪 How to Test with Multiple Users
+## 🧪 How to Test
 
-1.  **Open the live link:** [https://drawing-app-vr4u.onrender.com](https://drawing-app-vr4u.onrender.com)
-2.  **Open the link again** in a second browser window (e.g., an Incognito window or a different browser).
-3.  You should see both users in the "Online Users" list.
-4.  Draw in one window and observe the real-time updates in the other.
-5.  Test the "Undo" and "Redo" buttons to see the global state sync.
+### 1. Multi-Room Feature
+
+1.  Open `.../my-first-room` in your browser.
+2.  Open `.../a-second-room` in a different (or incognito) browser window.
+3.  Draw in **Room 1**. You will see your drawing and cursor.
+4.  Observe **Room 2**. It will remain empty. The rooms are successfully isolated.
+
+### 2. Multi-User Feature (In the Same Room)
+
+1.  Open `.../our-shared-room` in your browser.
+2.  Open `.../our-shared-room` on your phone or in another incognito window.
+3.  You will now see **two users** in the "Online Users" list in both windows.
+4.  Draw in one window. The drawing will appear instantly in the other.
+5.  Click "Undo" or "Redo" in either window. The action will be global and sync across both clients.
 
 ---
 
-## 🛠️ Local Setup & Running (Optional)
+## ✨ Key Features
 
-If you wish to run the project on your local machine:
+* **Real-Time Sync:** Uses WebSockets (Socket.io) to broadcast drawing data instantly.
+* **Isolated Rooms:** All state (drawings, users, history) is namespaced by room, defined by the URL path.
+* **Mobile Touch Support:** Full drawing support for mobile and tablet devices.
+* **Global Undo/Redo:** A server-authoritative history stack allows any user in a room to undo/redo actions for everyone.
+* **Live Cursors:** See where other users in your room are pointing in real-time.
+* **Dynamic Toolbar:**
+    * Custom, resizable cursor that visually changes from a brush to an eraser.
+    * Color picker, stroke width slider, and active tool states.
+* **Hybrid Input Lock:** Prevents screen-scribbling bugs on hybrid devices by "locking" the input to either mouse *or* touch for the duration of a single stroke.
+* **Responsive UI:** The toolbar and user list adapt to different screen sizes, including split-screen.
+
+---
+
+## 🛠️ Local Setup & Running
 
 1.  **Clone the repository:**
     ```bash
@@ -40,17 +67,5 @@ If you wish to run the project on your local machine:
     npm start
     ```
 4.  **Open the application:**
-    Open `http://localhost:3000` in your browser.
-
----
-
-## 💡 Key Features
-
-* **Real-Time Sync:** Uses WebSockets (Socket.io) to broadcast drawing data instantly to all clients.
-* **Global State:** A server-authoritative `operationHistory` array ensures all clients are in perfect sync.
-* **Global Undo/Redo:** A server-side `redoStack` and `operationHistory` allow any user to undo or redo actions for everyone.
-* **Live Cursors:** See where other users are pointing on the canvas in real-time.
-* **Dynamic Toolbar:** Custom, resizable cursor that changes from a brush to an eraser.
-* **Responsive UI:** The toolbar and user list adapt to different screen sizes, including split-screen.
-
+    Open `http://localhost:3000` in your browser. You can test rooms by visiting `http://localhost:3000/room1`, etc.
 
