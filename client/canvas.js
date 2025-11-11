@@ -14,22 +14,20 @@ export class CanvasApp {
   }
 
   resizeCanvas() {
-    // We need to subtract the toolbar height
-    const toolbarHeight = 50;
+    // We need to set the canvas to full window size
     this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight - toolbarHeight;
-    this.canvas.style.top = `${toolbarHeight}px`;
+    this.canvas.height = window.innerHeight;
 
-    // Note: Resizing clears the canvas. We'll need to redraw.
-    // In a real app, we'd request the history again or redraw from a local copy.
-    // For now, we'll let the next 'global-redraw' fix it.
+    // Note: Resizing clears the canvas.
+    // The main.js file will handle requesting a redraw.
   }
 
   getCanvasCoordinates(clientX, clientY) {
-    const rect = this.canvas.getBoundingClientRect();
+    // We no longer need to subtract clientRect
+    // because the canvas is at 0,0
     return {
-      x: clientX - rect.left,
-      y: clientY - rect.top
+      x: clientX,
+      y: clientY
     };
   }
 

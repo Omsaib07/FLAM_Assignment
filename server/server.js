@@ -11,7 +11,6 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 
 // --- State Management ---
-// We will move this to drawing-state.js later, but let's start simple.
 let operationHistory = [];
 let redoStack = [];
 let activeUsers = {}; // Stores socket.id -> user info
@@ -118,12 +117,18 @@ io.on('connection', (socket) => {
   });
 
   // --- Disconnect ---
+  // --- Disconnect ---
   socket.on('disconnect', () => {
     console.log(`User disconnected: ${socket.id}`);
     delete activeUsers[socket.id];
     delete activeStrokes[socket.id]; // Clear any unfinished strokes
+    
     // Notify all users of the updated list
     io.emit('user-list-update', Object.values(activeUsers));
+    
+    // ADD THIS LINE:
+    // This tells all clients to manually remove the disconnected user's cursor
+    io.emit('user-disconnected', socket.id);
   });
 });
 

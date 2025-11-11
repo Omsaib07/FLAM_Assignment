@@ -20,6 +20,7 @@ const undoBtn = document.getElementById('undo');
 const redoBtn = document.getElementById('redo');
 const userListEl = document.getElementById('users');
 const cursorOverlay = document.getElementById('cursor-overlay');
+const customCursor = document.getElementById('custom-cursor'); // Our custom cursor
 
 // --- Initialization ---
 const canvasApp = new CanvasApp(canvasEl);
@@ -38,18 +39,28 @@ colorInput.addEventListener('input', (e) => {
 widthInput.addEventListener('input', (e) => {
   appState.width = e.target.value;
   widthValue.textContent = e.target.value;
+  
+  // Update our custom cursor size
+  customCursor.style.width = `${e.target.value}px`;
+  customCursor.style.height = `${e.target.value}px`;
 });
 
 brushBtn.addEventListener('click', () => {
   appState.mode = 'source-over';
   brushBtn.classList.add('active');
   eraserBtn.classList.remove('active');
+  
+  // Change cursor to brush style
+  customCursor.classList.remove('eraser');
 });
 
 eraserBtn.addEventListener('click', () => {
   appState.mode = 'destination-out';
   eraserBtn.classList.add('active');
   brushBtn.classList.remove('active');
+  
+  // Change cursor to eraser style
+  customCursor.classList.add('eraser');
 });
 
 // Canvas Drawing Events
@@ -62,6 +73,9 @@ canvasEl.addEventListener('mousedown', (e) => {
 });
 
 canvasEl.addEventListener('mousemove', (e) => {
+  // Move our custom cursor
+  customCursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+  
   const point = canvasApp.getCanvasCoordinates(e.clientX, e.clientY);
 
   if (canvasApp.isDrawing) {
@@ -69,7 +83,7 @@ canvasEl.addEventListener('mousemove', (e) => {
     wsClient.drawStroke(point); // Send to server
   }
   
-  // Send cursor position
+  // Send *other* users our cursor position
   wsClient.moveCursor(point);
 });
 
@@ -85,7 +99,21 @@ canvasEl.addEventListener('mouseout', () => {
     canvasApp.stopDrawing();    // Local
     wsClient.endStroke();       // Send to server
   }
+  // Hide custom cursor when leaving canvas
+  customCursor.style.display = 'none';
 });
+
+canvasEl.addEventListener('mouseenter', (e) => {
+  // Show custom cursor when entering canvas
+  customCursor.style.display = 'block';
+  
+  // Set initial size and position
+  const currentWidth = widthInput.value;
+  customCursor.style.width = `${currentWidth}px`;
+  customCursor.style.height = `${currentWidth}px`;
+  customCursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+});
+
 
 // Undo/Redo
 undoBtn.addEventListener('click', () => wsClient.requestUndo());
@@ -126,6 +154,8 @@ wsClient.onStrokeDrawn((data) => {
 wsClient.onGlobalRedraw((history) => {
   console.log('Received global redraw command');
   canvasApp.redrawFromHistory(history);
+  // Re-set canvas settings as redraw clears them
+  canvasApp.ctx.globalCompositeOperation = appState.mode;
 });
 
 wsClient.onCursorMoved((data) => {
@@ -145,9 +175,8 @@ wsClient.onCursorMoved((data) => {
     cursorOverlay.appendChild(cursorEl);
   }
   
-  // Position the cursor relative to the canvas
-  const canvasRect = canvasEl.getBoundingClientRect();
-  cursorEl.style.transform = `translate(${canvasRect.left + data.x}px, ${canvasRect.top + data.y}px)`;
+  // Position the cursor relative to the window, not the canvas
+  cursorEl.style.transform = `translate(${data.x}px, ${data.y}px)`;
 });
 
 wsClient.onUserDisconnected((id) => {
@@ -158,5 +187,24 @@ wsClient.onUserDisconnected((id) => {
 });
 
 // Handle window resizing
-window.addEventListener('resize', () => canvasApp.resizeCanvas());
+window.addEventListener('resize', () => {
+  canvasApp.resizeCanvas();
+  // On resize, the canvas is cleared, so we must redraw from history
+  wsClient.socket.emit('request-history-redraw'); // We need to ask for a redraw
+  // A simpler way (if the server doesn't have this event):
+  // You would need to store the history locally and call
+  // canvasApp.redrawFromHistory(localHistory);
+});
+
+// Add a handler for the server to force a redraw (like on resize)
+wsClient.socket.on('force-redraw', (history) => {
+    canvasApp.redrawFromHistory(history);
+});
+
+// Add this to server.js in the connection block:
+// socket.on('request-history-redraw', () => {
+//   socket.emit('force-redraw', operationHistory);
+// });
+// For now, we'll just redraw from a blank slate.
+// The next global undo will fix it.
 canvasApp.resizeCanvas(); // Initial size
